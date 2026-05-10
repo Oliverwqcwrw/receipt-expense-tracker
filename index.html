@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Receipt & Expense Tracker — Free Online Tool</title>
+  <meta name="description" content="Paste receipt text or describe your expenses. AI extracts and categorizes items, totals, and gives you a clean expense summary. Free, no signup required." />
+  <meta property="og:title" content="AI Receipt & Expense Tracker" />
+  <meta property="og:description" content="Turn messy receipts into clean expense reports instantly with AI." />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AI Receipt & Expense Tracker",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "Paste receipt text or describe your expenses. AI extracts and categorizes items, totals, and gives you a clean expense summary.",
+    "url": "https://oliverwqcwrw.github.io/receipt-expense-tracker/"
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+    header { background: #161b22; border-bottom: 1px solid #30363d; padding: 18px 24px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1.3rem; font-weight: 700; color: #58a6ff; }
+    header span { font-size: 0.85rem; color: #8b949e; }
+    .container { max-width: 900px; margin: 0 auto; padding: 28px 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; }
+    .card h2 { font-size: 1rem; color: #c9d1d9; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    label { display: block; font-size: 0.82rem; color: #8b949e; margin-bottom: 6px; }
+    textarea, select, input[type=text], input[type=password] {
+      width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; padding: 10px 12px; font-size: 0.88rem; resize: vertical; outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus, select:focus, input:focus { border-color: #58a6ff; }
+    textarea { min-height: 180px; }
+    select { cursor: pointer; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: opacity .2s; }
+    .btn-primary { background: #238636; color: #fff; }
+    .btn-primary:hover { opacity: .85; }
+    .btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+    .btn-secondary:hover { background: #30363d; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .action-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    #output-section { margin-top: 24px; }
+    #output-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; }
+    #output-card h2 { font-size: 1rem; color: #c9d1d9; margin-bottom: 14px; }
+    #output { white-space: pre-wrap; font-size: 0.88rem; color: #c9d1d9; line-height: 1.7; }
+    .expense-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .expense-table th { background: #21262d; color: #58a6ff; font-size: 0.82rem; padding: 8px 12px; text-align: left; border-bottom: 1px solid #30363d; }
+    .expense-table td { padding: 8px 12px; border-bottom: 1px solid #21262d; font-size: 0.85rem; }
+    .expense-table tr:last-child td { border-bottom: none; }
+    .expense-table .total-row td { font-weight: 700; color: #58a6ff; border-top: 2px solid #30363d; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
+    .badge-food { background: #1f4a1f; color: #56d364; }
+    .badge-transport { background: #1a3a5c; color: #58a6ff; }
+    .badge-office { background: #3d2b00; color: #e3b341; }
+    .badge-health { background: #4a1a1a; color: #f85149; }
+    .badge-other { background: #2a2a2a; color: #8b949e; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status { font-size: 0.82rem; color: #8b949e; margin-top: 8px; }
+    .error { color: #f85149; }
+    .tips { margin-top: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 16px; }
+    .tips h3 { font-size: 0.9rem; color: #e3b341; margin-bottom: 10px; }
+    .tips ul { padding-left: 18px; }
+    .tips li { font-size: 0.83rem; color: #8b949e; line-height: 1.9; }
+    .provider-desc { font-size: 0.78rem; color: #58a6ff; margin-bottom: 12px; }
+    /* Donation */
+    .donation { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 24px; margin-top: 36px; text-align: center; }
+    .donation h3 { color: #e3b341; font-size: 1rem; margin-bottom: 6px; }
+    .donation p { color: #8b949e; font-size: 0.83rem; margin-bottom: 20px; }
+    .wallets { display: flex; justify-content: center; gap: 36px; flex-wrap: wrap; }
+    .wallet { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .wallet img { border-radius: 8px; border: 1px solid #30363d; }
+    .wallet-label { font-size: 0.78rem; color: #8b949e; font-weight: 600; }
+    .wallet-addr { font-size: 0.7rem; color: #58a6ff; word-break: break-all; max-width: 180px; text-align: center; }
+    .copy-btn { font-size: 0.72rem; color: #8b949e; background: #21262d; border: 1px solid #30363d; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+    .copy-btn:hover { color: #e6edf3; }
+    footer { text-align: center; color: #484f58; font-size: 0.78rem; padding: 24px 0 40px; }
+    footer a { color: #58a6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+<header>
+  <span>🧾</span>
+  <h1>AI Receipt & Expense Tracker</h1>
+  <span>Paste receipts → AI extracts & categorizes → Export summary</span>
+</header>
+
+<div class="container">
+  <div class="grid">
+    <!-- Input -->
+    <div class="card">
+      <h2>📋 Receipt / Expense Input</h2>
+      <label>Paste receipt text or describe your expenses:</label>
+      <textarea id="receipt-input" placeholder="Example:
+Walmart 2024-01-15
+- Milk $3.49
+- Bread $2.99
+- Coffee $8.50
+- Total: $14.98
+
+Or simply type:
+Lunch at McDonalds $12.50
+Uber to airport $34.00
+Office supplies from Staples $67.30
+Doctor visit copay $25.00"></textarea>
+      <div style="margin-top:12px;">
+        <label>Currency:</label>
+        <select id="currency">
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="JPY">JPY (¥)</option>
+          <option value="CNY">CNY (¥)</option>
+          <option value="CAD">CAD ($)</option>
+          <option value="AUD">AUD ($)</option>
+        </select>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="analyzeReceipt()">
+          <span>🔍</span> Analyze & Categorize
+        </button>
+        <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <!-- AI Config -->
+    <div class="card">
+      <h2>⚙️ AI Provider</h2>
+      <p class="provider-desc">API keys are stored locally in your browser only.</p>
+      <label>Provider:</label>
+      <select id="provider" onchange="updateProvider()">
+        <option value="groq">Groq (Free — llama-3.3-70b)</option>
+        <option value="openrouter">OpenRouter (Free — llama-3.3-70b)</option>
+        <option value="deepseek">DeepSeek (Low cost)</option>
+        <option value="openai">OpenAI (gpt-4o-mini)</option>
+      </select>
+      <div style="margin-top: 12px;">
+        <label id="key-label">Groq API Key:</label>
+        <input type="password" id="api-key" placeholder="Enter your API key..." oninput="saveKey()" />
+        <div style="margin-top:6px; font-size:0.76rem; color:#8b949e;">
+          Get free key: <a id="key-link" href="https://console.groq.com" target="_blank" style="color:#58a6ff;">console.groq.com</a>
+        </div>
+      </div>
+
+      <div class="tips" style="margin-top:16px;">
+        <h3>💡 What AI extracts:</h3>
+        <ul>
+          <li>Line items with prices</li>
+          <li>Category (Food, Transport, Office, Health, Other)</li>
+          <li>Date (if present)</li>
+          <li>Total & subtotals</li>
+          <li>Expense summary &amp; insights</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:16px;">
+        <label>Export Format:</label>
+        <select id="export-format">
+          <option value="csv">CSV (for Excel/Sheets)</option>
+          <option value="json">JSON</option>
+          <option value="text">Plain Text</option>
+        </select>
+        <button class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="exportData()">⬇️ Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div id="output-section" style="display:none;">
+    <div id="output-card">
+      <h2>📊 Expense Analysis</h2>
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <!-- Donation -->
+  <div class="donation">
+    <h3>❤️ Support This Tool</h3>
+    <p>This tool is free forever. If it saves you time, consider buying me a coffee!</p>
+    <div class="wallets">
+      <div class="wallet">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=TSvC67jexputnNHayVR8fpScwFmwvZV8jp" alt="USDT TRC-20 QR" width="110" height="110" />
+        <div class="wallet-label">USDT (TRC-20)</div>
+        <div class="wallet-addr">TSvC67jexputnNHayVR8fpScwFmwvZV8jp</div>
+        <button class="copy-btn" onclick="copyAddr('TSvC67jexputnNHayVR8fpScwFmwvZV8jp', this)">Copy</button>
+      </div>
+      <div class="wallet">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=0x11e764fac3fcd4be16da43a252a62b156e06a632" alt="ETH ERC-20 QR" width="110" height="110" />
+        <div class="wallet-label">ETH (ERC-20)</div>
+        <div class="wallet-addr">0x11e764fac3fcd4be16da43a252a62b156e06a632</div>
+        <button class="copy-btn" onclick="copyAddr('0x11e764fac3fcd4be16da43a252a62b156e06a632', this)">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>AI Receipt &amp; Expense Tracker · Free &amp; Open · <a href="https://github.com/Oliverwqcwrw/receipt-expense-tracker" target="_blank">GitHub</a></p>
+</footer>
+
+<script>
+const PROVIDERS = {
+  groq: { name: 'Groq', url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keyLink: 'https://console.groq.com', placeholder: 'gsk_...' },
+  openrouter: { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1/chat/completions', model: 'meta-llama/llama-3.3-70b-instruct:free', keyLink: 'https://openrouter.ai/keys', placeholder: 'sk-or-...' },
+  deepseek: { name: 'DeepSeek', url: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat', keyLink: 'https://platform.deepseek.com', placeholder: 'sk-...' },
+  openai: { name: 'OpenAI', url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', keyLink: 'https://platform.openai.com/api-keys', placeholder: 'sk-...' }
+};
+
+let parsedExpenses = [];
+
+function updateProvider() {
+  const p = PROVIDERS[document.getElementById('provider').value];
+  document.getElementById('key-label').textContent = `${p.name} API Key:`;
+  document.getElementById('key-link').href = p.keyLink;
+  document.getElementById('key-link').textContent = p.keyLink.replace('https://', '');
+  document.getElementById('api-key').placeholder = p.placeholder;
+  const saved = localStorage.getItem('receipt_key_' + document.getElementById('provider').value);
+  document.getElementById('api-key').value = saved || '';
+}
+
+function saveKey() {
+  localStorage.setItem('receipt_key_' + document.getElementById('provider').value, document.getElementById('api-key').value);
+}
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('status');
+  el.innerHTML = isError ? `<span class="error">${msg}</span>` : msg;
+}
+
+async function analyzeReceipt() {
+  const text = document.getElementById('receipt-input').value.trim();
+  if (!text) { setStatus('⚠️ Please paste some receipt text first.', true); return; }
+  const providerKey = document.getElementById('provider').value;
+  const apiKey = document.getElementById('api-key').value.trim();
+  if (!apiKey) { setStatus('⚠️ Please enter your API key.', true); return; }
+  const currency = document.getElementById('currency').value;
+  const p = PROVIDERS[providerKey];
+
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  setStatus('Sending to AI...');
+
+  const prompt = `You are an expert expense tracker AI. Analyze the following receipt/expense text and return a JSON object with this exact structure:
+{
+  "items": [
+    { "name": "Item description", "amount": 12.50, "category": "Food|Transport|Office|Health|Other", "date": "YYYY-MM-DD or empty string" }
+  ],
+  "total": 12.50,
+  "currency": "${currency}",
+  "summary": "2-3 sentence insight about spending patterns",
+  "byCategory": { "Food": 0, "Transport": 0, "Office": 0, "Health": 0, "Other": 0 }
+}
+
+Receipt/Expense text:
+${text}
+
+Return ONLY valid JSON, no markdown, no explanation.`;
+
+  try {
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+    if (providerKey === 'openrouter') { headers['HTTP-Referer'] = 'https://oliverwqcwrw.github.io/receipt-expense-tracker/'; }
+    const res = await fetch(p.url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ model: p.model, messages: [{ role: 'user', content: prompt }], temperature: 0.1, max_tokens: 2000 })
+    });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || `HTTP ${res.status}`); }
+    const data = await res.json();
+    const content = data.choices[0].message.content.trim();
+    const cleaned = content.replace(/^```json?\n?/, '').replace(/\n?```$/, '');
+    const result = JSON.parse(cleaned);
+    parsedExpenses = result;
+    renderResult(result, currency);
+    setStatus('✅ Analysis complete!');
+  } catch(e) {
+    setStatus(`❌ Error: ${e.message}`, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔍</span> Analyze & Categorize';
+  }
+}
+
+function getCategoryBadge(cat) {
+  const map = { Food: 'badge-food', Transport: 'badge-transport', Office: 'badge-office', Health: 'badge-health', Other: 'badge-other' };
+  return `<span class="badge ${map[cat] || 'badge-other'}">${cat || 'Other'}</span>`;
+}
+
+function renderResult(data, currency) {
+  const symbols = { USD:'$', EUR:'€', GBP:'£', JPY:'¥', CNY:'¥', CAD:'$', AUD:'$' };
+  const sym = symbols[currency] || '$';
+  const fmt = n => `${sym}${Number(n).toFixed(currency === 'JPY' ? 0 : 2)}`;
+
+  let html = '<table class="expense-table"><thead><tr><th>Item</th><th>Category</th><th>Date</th><th>Amount</th></tr></thead><tbody>';
+  for (const item of data.items) {
+    html += `<tr><td>${item.name}</td><td>${getCategoryBadge(item.category)}</td><td>${item.date || '—'}</td><td>${fmt(item.amount)}</td></tr>`;
+  }
+  html += `<tr class="total-row"><td colspan="3">TOTAL</td><td>${fmt(data.total)}</td></tr></tbody></table>`;
+
+  // By category
+  const cats = Object.entries(data.byCategory || {}).filter(([,v]) => v > 0);
+  if (cats.length) {
+    html += '<div style="margin-top:18px;"><strong style="color:#8b949e;font-size:.85rem;">By Category</strong><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;">';
+    for (const [cat, amt] of cats) {
+      html += `<div style="background:#21262d;border-radius:8px;padding:8px 14px;font-size:.83rem;">${getCategoryBadge(cat)} <span style="color:#c9d1d9;margin-left:6px;">${fmt(amt)}</span></div>`;
+    }
+    html += '</div></div>';
+  }
+
+  if (data.summary) {
+    html += `<div style="margin-top:18px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;font-size:.85rem;color:#8b949e;"><strong style="color:#e3b341;">💡 Insight:</strong> ${data.summary}</div>`;
+  }
+
+  document.getElementById('output').innerHTML = html;
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exportData() {
+  if (!parsedExpenses || !parsedExpenses.items) { alert('Please analyze receipts first.'); return; }
+  const format = document.getElementById('export-format').value;
+  let content, filename, type;
+  if (format === 'csv') {
+    content = 'Name,Category,Date,Amount,Currency\n' + parsedExpenses.items.map(i => `"${i.name}","${i.category}","${i.date || ''}","${i.amount}","${parsedExpenses.currency}"`).join('\n');
+    filename = 'expenses.csv'; type = 'text/csv';
+  } else if (format === 'json') {
+    content = JSON.stringify(parsedExpenses, null, 2);
+    filename = 'expenses.json'; type = 'application/json';
+  } else {
+    content = parsedExpenses.items.map(i => `${i.name} | ${i.category} | ${i.date || 'N/A'} | ${i.amount} ${parsedExpenses.currency}`).join('\n') + `\n\nTotal: ${parsedExpenses.total} ${parsedExpenses.currency}`;
+    filename = 'expenses.txt'; type = 'text/plain';
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename; a.click();
+}
+
+function clearAll() {
+  document.getElementById('receipt-input').value = '';
+  document.getElementById('output-section').style.display = 'none';
+  document.getElementById('status').textContent = '';
+  parsedExpenses = [];
+}
+
+function copyAddr(addr, btn) {
+  navigator.clipboard.writeText(addr);
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+
+// Init
+updateProvider();
+</script>
+</body>
+</html>
